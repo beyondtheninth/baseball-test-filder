@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>야수 8포지션 성향 테스트</title>
+<style>
+:root{--ink:#191919;--muted:#77736d;--line:#d8d3c9;--accent:#a52b35;--paper:#eeeae1}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}
+.wrap{max-width:720px;margin:auto;padding:22px 16px 48px}.hero,.panel,.result{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 6px 24px #14253a0a}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.12em;color:#65758a}.hero h1{font-size:clamp(26px,6vw,38px);line-height:1.2;margin:10px 0}.hero p{color:var(--muted);line-height:1.65;margin-bottom:0}
+.progress{height:7px;background:#edf0f3;border-radius:99px;margin:22px 0 8px;overflow:hidden}.bar{height:100%;width:0;background:var(--accent);transition:.2s}
+.meta{display:flex;justify-content:space-between;color:var(--muted);font-size:13px}
+.qnum{font-size:13px;color:#748091;font-weight:800;margin:8px 0}.question{font-size:22px;line-height:1.4;margin:4px 0 20px}
+.choice{display:block;width:100%;text-align:left;padding:16px 17px;margin:10px 0;border:1.5px solid var(--line);border-radius:14px;background:white;color:var(--ink);font-size:15px;line-height:1.5;cursor:pointer}
+.choice:hover{border-color:#8092a6}.choice.selected{border-color:var(--accent);background:#f0f4f8}.letter{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:8px;background:#edf1f5;font-weight:800;margin-right:10px}
+.actions{display:flex;gap:10px;margin-top:20px}.btn{border:0;border-radius:12px;padding:13px 18px;font-weight:800;font-size:14px;cursor:pointer}.primary{background:var(--accent);color:#fff;flex:1}.secondary{background:#eef1f4;color:#35404c}.btn:disabled{opacity:.35;cursor:not-allowed}
+.hidden{display:none!important}.result h2{font-size:28px;margin:8px 0}.emoji{font-size:48px}.desc{color:#4f5b67;line-height:1.7}.tag{display:inline-block;background:#eef2f6;border-radius:99px;padding:6px 10px;font-size:12px;margin:3px}
+.scorelist{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}.score-row{display:grid;grid-template-columns:78px 1fr 34px;gap:9px;align-items:center;margin:10px 0;font-size:13px}.track{height:8px;background:#edf0f3;border-radius:99px;overflow:hidden}.fill{height:100%;background:#637b95}.fine{font-size:12px;color:var(--muted);line-height:1.6}
+.hero-visual{width:100%;overflow:hidden;border-radius:16px}
+.hero-visual img{display:block;width:100%;height:220px;object-fit:cover;object-position:center;}
+.result-visual img{display:block;width:100%;max-width:400px;height:auto;margin:20px auto}
+footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<section class="hero" id="intro">
+<div class="kicker">BEYOND THE NINTH · PLAYER TYPE TEST</div>
+<div class="hero-visual">
+    <img src="images/header.jpg" alt="야구 메인 비주얼">
+</div>
+<h1>나는 어떤 야수 포지션일까?</h1>
+<p>성향을 따라가다 보면 나와 닮은 포지션이 나타납니다.<br>총 10문항, 각 문항에서 가장 나다운 답 하나를 골라주세요!</p>
+<div class="actions"><button class="btn primary" onclick="start()">야구단 입단하기</button></div>
+</section>
+<section class="panel hidden" id="quiz">
+<div class="meta"><span id="step">QUESTION 1 / 10</span><span id="progressText">10%</span></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div class="qnum" id="qnum"></div><div class="question" id="qtext"></div>
+<div id="choices"></div>
+<div class="actions"><button class="btn secondary" id="prev" onclick="move(-1)">이전</button><button class="btn primary" id="next" onclick="move(1)" disabled>다음</button></div>
+</section>
+<section class="result hidden" id="result"></section>
+<footer>이 테스트는 원활한 캐릭터 디자인을 위해 (제작자가 생각하는) 각 포지션별 스테레오타입을 기준으로 하였습니다.</footer>
+</div>
+<script>
+// ─────────────────────────────────────────────
+// 편집 구역: 문항·선택지 문구와 포지션별 점수
+// 각 선택지는 의미에 맞는 주 포지션(+2), 보조 포지션(+1)을 가집니다.
+// A/B/C/D 글자 자체에는 점수가 연결되어 있지 않습니다.
+// ─────────────────────────────────────────────
+const POSITIONS = {
+ first:{name:"1루수",emoji:"🧊",title:"인간 냉장고",tags:["묵직함","안정감","신뢰"],desc:"쉽게 흔들리지 않는 든든한 버팀목. 화려하게 나서기보다 맡은 일을 꾸준히 해내고, 주변 사람들이 믿고 기댈 수 있는 타입입니다.",image:"images/first.gif"
+ },
+ second:{name:"2루수",emoji:"🐿️",title:"작고 빠릿빠릿한 쌥쌥이",tags:["순발력","재치","임기응변"],desc:"상황 파악이 빠르고 빈틈을 잘 찾아내는 타입. 몸도 마음도 가볍게 움직이며, 예상 밖의 상황에서 오히려 센스가 빛납니다."},
+ third:{name:"3루수",emoji:"💥",title:"호쾌한 파워형",tags:["대담함","파워","자신감"],desc:"결정적인 순간에 주저하지 않는 승부사. 정면 돌파를 즐기고, 존재감 있는 한 방으로 흐름을 바꾸는 타입입니다."},
+ short:{name:"유격수",emoji:"🦊",title:"날렵한 올라운더",tags:["센스","판단력","균형감"],desc:"전체 판을 읽고 가장 효율적인 선택을 하는 타입. 여러 능력을 고르게 갖췄고, 복잡한 상황에서도 판단이 빠릅니다."},
+ left:{name:"좌익수",emoji:"🔥",title:"공격력 몰빵 타격형",tags:["공격 본능","승부욕","타격 감각"],desc:"자신이 잘하는 무기로 승부하는 타입. 기회를 기다리기보다 공격적으로 잡아채고, 결과를 만들어내는 데서 짜릿함을 느낍니다."},
+ center:{name:"중견수",emoji:"⚡",title:"운동능력 만렙 육각형",tags:["활동량","기동력","밸런스"],desc:"넓은 범위를 커버하는 에너지 넘치는 타입. 새로운 일에도 몸을 먼저 움직이고, 여러 역할을 유연하게 소화합니다."},
+ right:{name:"우익수",emoji:"🚀",title:"강견의 거포",tags:["강한 어깨","장타력","존재감"],desc:"자기만의 확실한 무기와 묵직한 존재감을 가진 타입. 평소엔 여유 있어 보여도 결정적인 순간 강한 한 방을 보여줍니다."},
+ catcher:{name:"포수",emoji:"🧢",title:"안방마님",tags:["책임감","관찰력","리더십"],desc:"팀 전체를 살피고 중심을 잡는 타입. 사람과 상황을 세심하게 관찰하고, 필요한 순간 책임지고 방향을 제시합니다."}
+};
+const QUESTIONS = [
+{q:"팀플레이를 할 때 나는?",a:[
+["누가 맡아도 되는 일이라면 내가 꾸준히 맡아 마무리한다.","first","catcher"],
+["상황을 빠르게 읽고 지금 필요한 일을 찾아 움직인다.","second","short"],
+["중요한 순간에 앞장서서 분위기를 끌어올린다.","third","left"],
+["각자의 장점을 살피고 역할이 잘 맞도록 조율한다.","catcher","short"]]},
+{q:"예상하지 못한 문제가 생겼다! 나는?",a:[
+["당황하지 않고 하던 일을 차근차근 수습한다.","first","short"],
+["일단 주변을 살피고 가장 빠른 해결책을 찾는다.","second","center"],
+["고민만 하기보다 일단 부딪쳐서 돌파한다.","third","right"],
+["누가 무엇을 해야 할지 정리하고 상황을 통제한다.","catcher","short"]]},
+{q:"내가 가장 듣고 싶은 칭찬은?",a:[
+["역시 너한테 맡기면 마음이 놓여.","first","catcher"],
+["눈치 빠르고 센스 있다는 말.","second","short"],
+["결정적인 순간에 해내는 사람이라는 말.","left","third"],
+["못하는 게 없고 뭐든 잘한다는 말.","center","short"]]},
+{q:"승부를 앞둔 순간, 나의 모습은?",a:[
+["평소처럼 차분하게 내 페이스를 유지한다.","first","short"],
+["상대와 흐름을 관찰하며 빈틈을 찾는다.","second","catcher"],
+["긴장보다 자신감이 앞선다. 정면 승부다!","third","right"],
+["팀원들의 상태를 살피며 필요한 말을 건넨다.","catcher","center"]]},
+{q:"내가 가장 자신 있는 능력은?",a:[
+["꾸준함. 한 번 맡은 일은 끝까지 해낸다.","first","catcher"],
+["순간적인 판단과 빠른 대처.","second","short"],
+["과감한 실행력과 결과를 내는 힘.","left","third"],
+["체력과 다재다능함. 여러 일을 동시에 해낸다.","center","short"]]},
+{q:"친구들과 여행을 간다면 나는?",a:[
+["일정과 준비물을 꼼꼼히 챙기는 안정 담당.","catcher","first"],
+["현장에서 맛집이나 동선을 재빠르게 찾아낸다.","second","center"],
+["하고 싶은 건 일단 해보자며 분위기를 띄운다.","third","left"],
+["체력과 상황을 고려해 모두가 즐길 코스를 짠다.","short","center"]]},
+{q:"경쟁 상황에서 나의 전략은?",a:[
+["흔들리지 않고 내가 잘하는 걸 꾸준히 반복한다.","first","left"],
+["상대의 움직임을 읽고 허점을 공략한다.","short","second"],
+["승부처를 기다렸다가 강하게 한 방을 노린다.","right","third"],
+["팀의 흐름을 살피며 가장 필요한 역할을 맡는다.","catcher","center"]]},
+{q:"나를 동물에 비유한다면?",a:[
+["곰. 느긋하지만 믿음직하고 쉽게 밀리지 않는다.","first","right"],
+["다람쥐. 재빠르고 호기심 많고 눈치가 빠르다.","second","center"],
+["호랑이. 대담하고 승부욕이 강하다.","third","left"],
+["여우. 영리하고 주변을 잘 살피며 유연하다.","short","catcher"]]},
+{q:"팀에서 내가 맡고 싶은 역할은?",a:[
+["묵묵히 제 몫을 해내는 든든한 중심축.","first","center"],
+["여기저기 빈 곳을 메우는 기동력 담당.","center","second"],
+["결정적인 순간 흐름을 뒤집는 해결사.","right","left"],
+["전체를 조망하고 팀을 이끄는 조율자.","catcher","short"]]},
+{q:"마지막으로, 내가 가장 중요하게 생각하는 것은?",a:[
+["꾸준히 쌓아 올린 신뢰와 안정감.","first","catcher"],
+["변화에 맞춰 유연하게 움직이는 센스.","second","short"],
+["두려워하지 않고 도전해 결과를 만드는 것.","third","left"],
+["나 혼자보다 함께 잘해내는 팀의 균형.","catcher","center"]]}
+];
+// ─────────────────────────────────────────────
+let current=0, answers=Array(QUESTIONS.length).fill(null);
+const $=id=>document.getElementById(id);
+function start(){$("intro").classList.add("hidden");$("quiz").classList.remove("hidden");render()}
+function render(){
+ const q=QUESTIONS[current]; $("step").textContent=`QUESTION ${current+1} / ${QUESTIONS.length}`;
+ $("progressText").textContent=`${Math.round((current+1)/QUESTIONS.length*100)}%`;
+ $("bar").style.width=`${(current+1)/QUESTIONS.length*100}%`;
+ $("qnum").textContent=`Q${String(current+1).padStart(2,"0")}`;
+ $("qtext").textContent=q.q;
+ $("choices").innerHTML="";
+ q.a.forEach((a,i)=>{const b=document.createElement("button");b.className="choice"+(answers[current]===i?" selected":"");b.innerHTML=`<span class="letter">${"ABCD"[i]}</span>${a[0]}`;b.onclick=()=>{answers[current]=i;render()};$("choices").appendChild(b)});
+ $("prev").disabled=current===0;$("next").textContent=current===QUESTIONS.length-1?"결과 보기":"다음";$("next").disabled=answers[current]===null;
+}
+function move(d){if(d<0){current--;render();return}if(answers[current]===null)return;if(current<QUESTIONS.length-1){current++;render()}else showResult()}
+function calculate(){
+ const scores=Object.fromEntries(Object.keys(POSITIONS).map(k=>[k,0]));
+ answers.forEach((idx,qi)=>{const a=QUESTIONS[qi].a[idx];scores[a[1]]+=2;scores[a[2]]+=1});
+ return scores;
+}
+function showResult(){
+ const scores=calculate(), sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+ const max=sorted[0][1], winners=sorted.filter(x=>x[1]===max).map(x=>x[0]);
+ const primary=winners[0], p=POSITIONS[primary], isTie=winners.length>1;
+ const names=winners.map(k=>POSITIONS[k].name).join(" · ");
+
+ const ranked=sorted.map(([k,v])=>`<div class="score-row"><span>${POSITIONS[k].name}</span><div class="track"><div class="fill" style="width:${max?100*v/max:0}%"></div></div><b>${v}</b></div>`).join("");
+
+ const allTags=[...new Set(winners.flatMap(k=>POSITIONS[k].tags))];
+
+ const resultImages=winners.map(k=>{
+   const pos=POSITIONS[k];
+   if(!pos.image)return "";
+   return `<div class="result-visual"><img src="${pos.image}" alt="${pos.name} 결과 이미지"></div>`;
+ }).join("");
+
+ $("quiz").classList.add("hidden");
+ $("result").classList.remove("hidden");
+
+ $("result").innerHTML=`
+ <div class="kicker">YOUR POSITION TYPE</div>
+ <div class="emoji">${winners.map(k=>POSITIONS[k].emoji).join(" ")}</div>
+ <h2>${isTie?"공동 1위!":p.name}</h2>
+ <h3>${isTie?names:p.title}</h3>
+
+ ${resultImages}
+
+ <p class="desc">${isTie?"두 포지션의 성향이 비슷하게 나타났어요. 아래 유형들을 함께 확인해 보세요.":p.desc}</p>
+
+ ${winners.map(k=>`<div style="padding:12px 0;border-top:1px solid var(--line)"><b>${POSITIONS[k].emoji} ${POSITIONS[k].name} · ${POSITIONS[k].title}</b><p class="desc">${POSITIONS[k].desc}</p></div>`).join("")}
+
+ <div>${allTags.map(t=>`<span class="tag">${t}</span>`).join("")}</div>
+ <div class="scorelist"><b>포지션별 점수</b>${ranked}</div>
+ <p class="fine">채점 방식: 각 답변의 주 포지션 +2점, 보조 포지션 +1점. 선택지의 문구와 연결된 포지션만 점수를 얻습니다. A/B/C/D 알파벳 자체는 특정 포지션을 뜻하지 않습니다.</p>
+ <div class="actions"><button class="btn secondary" onclick="retry()">다시 하기</button><button class="btn primary" onclick="copyResult()">결과 복사</button></div>`;
+
+ window.lastResult=`야수 8포지션 성향 테스트 결과: ${names}${isTie?" (공동 1위)":""}`;
+}
+function retry(){answers=Array(QUESTIONS.length).fill(null);current=0;$("result").classList.add("hidden");$("quiz").classList.remove("hidden");render()}
+function copyResult(){if(navigator.clipboard)navigator.clipboard.writeText(window.lastResult).then(()=>alert("결과를 복사했어요!"));else alert(window.lastResult)}
+</script>
+</body></html>
