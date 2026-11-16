@@ -117,6 +117,10 @@ footer{color:#789184}
 /* BGM toggle: visible from the quiz onward, independent of card export */
 .bgm-toggle{position:fixed;right:max(16px,env(safe-area-inset-right));bottom:max(18px,env(safe-area-inset-bottom));z-index:1000;border:1px solid #b89c65;border-radius:999px;padding:11px 16px;background:#153f38;color:#f6f0df;font:800 13px "Pretendard",sans-serif;box-shadow:0 4px 18px #102e2860;cursor:pointer}
 .bgm-toggle:focus-visible{outline:3px solid #d5b77a;outline-offset:3px}
+/* 출처 표기 */
+footer .source-credit{display:block;margin-top:12px;font-size:12px;line-height:1.7}
+footer .source-credit a{color:var(--accent);font-weight:800;text-decoration:underline;text-underline-offset:3px}
+footer .source-credit a:hover{opacity:.75}
 </style>
 </head>
 <body>
@@ -141,7 +145,7 @@ footer{color:#789184}
 <div class="actions"><button class="btn secondary" id="prev" onclick="move(-1)">이전</button><button class="btn primary" id="next" onclick="move(1)" disabled>다음</button></div>
 </section>
 <section class="result hidden" id="result"></section>
-<footer>이 테스트는 원활한 캐릭터 디자인을 위해 (제작자가 생각하는) 각 포지션별 스테레오타입을 기준으로 하였습니다.</footer>
+<footer>이 테스트는 원활한 캐릭터 디자인을 위해 (제작자가 생각하는) 각 포지션별 스테레오타입을 기준으로 하였습니다.<span class="source-credit">출처: <a href="https://youtube.com/@ssglanders?si=PEyZrwfxMop9rb71" target="_blank" rel="noopener noreferrer">SSG 랜더스 공식 유튜브</a></span></footer>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
@@ -228,23 +232,36 @@ const QUESTIONS = [
 let current=0, answers=Array(QUESTIONS.length).fill(null);
 const $=id=>document.getElementById(id);
 // 사용자 클릭으로 시작하므로 모바일 브라우저 자동재생 제한에 대응합니다.
-const bgm = $("siteBgm");
+const bgm = document.getElementById("siteBgm");
 bgm.volume = 0.35;
+const bgmButton = document.getElementById("bgmToggle");
 function updateBgmButton(){
- const playing = !bgm.paused;
- const btn = $("bgmToggle");
- btn.textContent = playing ? "♫ BGM ON" : "♫ BGM OFF";
- btn.setAttribute("aria-pressed", String(playing));
- btn.setAttribute("aria-label", playing ? "배경음악 끄기" : "배경음악 켜기");
+  const playing = !bgm.paused && !bgm.error;
+  bgmButton.textContent = playing ? "♫ BGM ON" : "♫ BGM OFF";
+  bgmButton.setAttribute("aria-pressed", String(playing));
+  bgmButton.setAttribute("aria-label", playing ? "배경음악 끄기" : "배경음악 켜기");
 }
-function tryPlayBgm(){
- const attempt = bgm.play();
- if(attempt && typeof attempt.catch === "function") attempt.catch(() => {updateBgmButton();});
+function bgmErrorMessage(err){
+  const code = bgm.error?.code;
+  if(code === 4 || code === 2 || code === 3){
+    return "음악 파일을 불러오거나 재생하지 못했어!\nGitHub images 폴더에 bgm.mp3가 있는지, 파일 이름과 형식이 맞는지 확인해 줘.\n확인 주소: " + new URL("images/bgm.mp3", location.href).href;
+  }
+  if(err?.name === "NotAllowedError") return "브라우저에서 음악 재생을 차단했어. 크롬에서 사이트를 직접 열고 BGM ON을 다시 눌러 줘.";
+  return "음악을 재생할 수 없어. images/bgm.mp3 파일 업로드 여부를 확인해 줘.";
 }
+async function startBgm(showError = false){
+  try {
+    if(bgm.error) bgm.load();
+    await bgm.play();
+  } catch(err) {
+    if(showError) alert(bgmErrorMessage(err));
+  }
+  updateBgmButton();
+}
+function tryPlayBgm(){ startBgm(false); }
 function toggleBgm(){
- if(bgm.paused) tryPlayBgm();
- else bgm.pause();
- updateBgmButton();
+  if(bgm.paused) startBgm(true);
+  else { bgm.pause(); updateBgmButton(); }
 }
 bgm.addEventListener("play", updateBgmButton);
 bgm.addEventListener("pause", updateBgmButton);
