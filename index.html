@@ -42,6 +42,20 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
 .share-card-description{max-width:380px;font-size:12px;line-height:1.55;color:#383838}
 .share-card-foot{padding:10px 6px 3px;border-top:1px solid #D9B778}
 @media(max-width:420px){.share-card{padding:12px;gap:6px}.share-card-main{padding:10px 8px;gap:5px}.share-card-art{width:50%;height:85px}.share-card-description{font-size:10px;line-height:1.4}.share-card-tags{font-size:10px}}
+
+/* BT9 카드 비율·여백·GIF 이미지 보정 */
+.share-card{aspect-ratio:4/4.4;gap:7px;padding:14px}
+.share-card-main{padding:14px 14px;gap:9px;justify-content:center}
+.share-card-art{width:auto;max-width:85%;height:clamp(140px,27vw,220px);max-height:220px;object-fit:contain;margin:6px auto}
+.share-card-name{font-size:clamp(34px,7vw,54px)}
+.share-card-title{font-size:clamp(18px,4vw,25px)}
+.share-card-description{font-size:13px;line-height:1.5}
+@media(max-width:420px){
+ .share-card{padding:10px;gap:5px}
+ .share-card-main{padding:10px 9px;gap:6px}
+ .share-card-art{width:auto;max-width:88%;height:clamp(125px,36vw,180px);margin:4px auto}
+ .share-card-description{font-size:11px;line-height:1.45}
+}
 </style>
 </head>
 <body>
@@ -292,9 +306,27 @@ async function saveAnimatedCard(){
    try{
     for(let i=0;i<selected.length;i++){
      btn.textContent=`GIF 생성 중 ${i+1}/${selected.length}`;
-     art.src=selected[i].data;
-     await new Promise((ok,fail)=>{if(art.complete&&art.naturalWidth)ok();else{art.onload=ok;art.onerror=fail}});
-     const canvas=await html2canvas(card,{scale:1.5,backgroundColor:"#17283D",useCORS:true,logging:false});
+     // 프레임마다 원본 비율을 보존해 이미지 영역에 합성합니다.
+     // html2canvas가 GIF 프레임을 찌그러뜨리지 않도록 카드 배경과 이미지를 분리해 그립니다.
+     const frameImg=new Image();
+     frameImg.src=selected[i].data;
+     await frameImg.decode();
+     const imageBox=art.getBoundingClientRect();
+     const cardBox=card.getBoundingClientRect();
+     const scale=1.5;
+     const previousVisibility=art.style.visibility;
+     art.style.visibility="hidden";
+     let canvas;
+     try{
+      canvas=await html2canvas(card,{scale,backgroundColor:"#17283D",useCORS:true,logging:false});
+     }finally{art.style.visibility=previousVisibility;}
+     const draw=canvas.getContext("2d");
+     const boxW=imageBox.width*scale,boxH=imageBox.height*scale;
+     const ratio=Math.min(boxW/frameImg.naturalWidth,boxH/frameImg.naturalHeight);
+     const drawW=frameImg.naturalWidth*ratio,drawH=frameImg.naturalHeight*ratio;
+     const dx=(imageBox.left-cardBox.left)*scale+(boxW-drawW)/2;
+     const dy=(imageBox.top-cardBox.top)*scale+(boxH-drawH)/2;
+     draw.drawImage(frameImg,dx,dy,drawW,drawH);
      encoder.addFrame(canvas,{copy:true,delay:selected[i].delay});
     }
     encoder.render();
