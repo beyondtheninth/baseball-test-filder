@@ -17,15 +17,7 @@
 .choice{display:block;width:100%;text-align:left;padding:16px 17px;margin:10px 0;border:1.5px solid var(--line);border-radius:14px;background:white;color:var(--ink);font-size:15px;line-height:1.5;cursor:pointer}
 .choice:hover{border-color:#a52b35;background-color:#fff3f4}.choice.selected{border-color:#a52b35;background:#fbe8eb}.letter{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:8px;background:#edf1f5;font-weight:800;margin-right:10px}
 .actions{display:flex;gap:10px;margin-top:20px}.btn{border:0;border-radius:12px;padding:13px 18px;font-weight:800;font-size:14px;cursor:pointer}.primary{background:var(--accent);color:#fff;flex:1}.secondary{background:#eef1f4;color:#35404c}.btn:disabled{opacity:.35;cursor:not-allowed}
-.hidden{display:none!important}.result h2{
-  font-family:"Black Han Sans",sans-serif;
-  font-size:clamp(42px,9vw,64px);
-  font-weight:400;
-  letter-spacing:-2px;
-  line-height:1.2;
-  color:#17283D;
-  margin:12px 0;
-}.emoji{font-size:48px}.desc{color:#4f5b67;line-height:1.7}.tag{display:inline-block;background:#eef2f6;border-radius:99px;padding:6px 10px;font-size:12px;margin:3px}
+.hidden{display:none!important}.result h2{font-size:28px;margin:8px 0}.emoji{font-size:48px}.desc{color:#4f5b67;line-height:1.7}.tag{display:inline-block;background:#eef2f6;border-radius:99px;padding:6px 10px;font-size:12px;margin:3px}
 .scorelist{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}.score-row{display:grid;grid-template-columns:78px 1fr 34px;gap:9px;align-items:center;margin:10px 0;font-size:13px}.track{height:8px;background:#edf0f3;border-radius:99px;overflow:hidden}.fill{height:100%;background:#a52b35}.fine{font-size:12px;color:var(--muted);line-height:1.6}
 .hero-visual{width:100%;overflow:hidden;border-radius:16px}
 .hero-visual img{display:block;width:100%;height:220px;object-fit:cover;object-position:center;}
@@ -65,11 +57,11 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
  .share-card-art{width:auto;max-width:88%;height:clamp(125px,36vw,180px);margin:4px auto}
  .share-card-description{font-size:11px;line-height:1.45}
 }
-  /* 결과 화면 포지션 이름 전용 */
+/* 결과 화면의 포지션 이름: 스포츠 타이틀 폰트 */
 .result h2 {
-  font-family: "Black Han Sans", sans-serif !important;
-  font-size: 60px !important;
-  font-weight: 400 !important;
+  font-family: "Black Han Sans", sans-serif;
+  font-size: 60px;
+  font-weight: 400;
   letter-spacing: -2px;
   line-height: 1.2;
   color: #17283D;
@@ -117,56 +109,66 @@ const POSITIONS = {
  catcher:{name:"포수",emoji:"🧢",title:"안방마님",tags:["책임감","관찰력","리더십"],desc:"팀 전체를 살피고 중심을 잡는 타입. 사람과 상황을 세심하게 관찰하고, 필요한 순간 책임지고 방향을 제시합니다.",image:"images/catcher.gif",pngImage:"images/catcher.png"}
 };
 const QUESTIONS = [
-{q:"팀플레이를 할 때 나는?",a:[
-["누가 맡아도 되는 일이라면 내가 꾸준히 맡아 마무리한다.","first","catcher"],
-["상황을 빠르게 읽고 지금 필요한 일을 찾아 움직인다.","second","short"],
-["중요한 순간에 앞장서서 분위기를 끌어올린다.","third","left"],
-["각자의 장점을 살피고 역할이 잘 맞도록 조율한다.","catcher","short"]]},
-{q:"예상하지 못한 문제가 생겼다! 나는?",a:[
-["당황하지 않고 하던 일을 차근차근 수습한다.","first","short"],
-["일단 주변을 살피고 가장 빠른 해결책을 찾는다.","second","center"],
-["고민만 하기보다 일단 부딪쳐서 돌파한다.","third","right"],
-["누가 무엇을 해야 할지 정리하고 상황을 통제한다.","catcher","short"]]},
-{q:"내가 가장 듣고 싶은 칭찬은?",a:[
-["역시 너한테 맡기면 마음이 놓여.","first","catcher"],
-["눈치 빠르고 센스 있다는 말.","second","short"],
-["결정적인 순간에 해내는 사람이라는 말.","left","third"],
-["못하는 게 없고 뭐든 잘한다는 말.","center","short"]]},
-{q:"승부를 앞둔 순간, 나의 모습은?",a:[
-["평소처럼 차분하게 내 페이스를 유지한다.","first","short"],
-["상대와 흐름을 관찰하며 빈틈을 찾는다.","second","catcher"],
-["긴장보다 자신감이 앞선다. 정면 승부다!","third","right"],
-["팀원들의 상태를 살피며 필요한 말을 건넨다.","catcher","center"]]},
-{q:"내가 가장 자신 있는 능력은?",a:[
-["꾸준함. 한 번 맡은 일은 끝까지 해낸다.","first","catcher"],
-["순간적인 판단과 빠른 대처.","second","short"],
-["과감한 실행력과 결과를 내는 힘.","left","third"],
-["체력과 다재다능함. 여러 일을 동시에 해낸다.","center","short"]]},
-{q:"친구들과 여행을 간다면 나는?",a:[
-["일정과 준비물을 꼼꼼히 챙기는 안정 담당.","catcher","first"],
-["현장에서 맛집이나 동선을 재빠르게 찾아낸다.","second","center"],
-["하고 싶은 건 일단 해보자며 분위기를 띄운다.","third","left"],
-["체력과 상황을 고려해 모두가 즐길 코스를 짠다.","short","center"]]},
-{q:"경쟁 상황에서 나의 전략은?",a:[
-["흔들리지 않고 내가 잘하는 걸 꾸준히 반복한다.","first","left"],
-["상대의 움직임을 읽고 허점을 공략한다.","short","second"],
-["승부처를 기다렸다가 강하게 한 방을 노린다.","right","third"],
-["팀의 흐름을 살피며 가장 필요한 역할을 맡는다.","catcher","center"]]},
-{q:"나를 동물에 비유한다면?",a:[
-["곰. 느긋하지만 믿음직하고 쉽게 밀리지 않는다.","first","right"],
-["다람쥐. 재빠르고 호기심 많고 눈치가 빠르다.","second","center"],
-["호랑이. 대담하고 승부욕이 강하다.","third","left"],
-["여우. 영리하고 주변을 잘 살피며 유연하다.","short","catcher"]]},
-{q:"팀에서 내가 맡고 싶은 역할은?",a:[
-["묵묵히 제 몫을 해내는 든든한 중심축.","first","center"],
-["여기저기 빈 곳을 메우는 기동력 담당.","center","second"],
-["결정적인 순간 흐름을 뒤집는 해결사.","right","left"],
-["전체를 조망하고 팀을 이끄는 조율자.","catcher","short"]]},
-{q:"마지막으로, 내가 가장 중요하게 생각하는 것은?",a:[
-["꾸준히 쌓아 올린 신뢰와 안정감.","first","catcher"],
-["변화에 맞춰 유연하게 움직이는 센스.","second","short"],
-["두려워하지 않고 도전해 결과를 만드는 것.","third","left"],
-["나 혼자보다 함께 잘해내는 팀의 균형.","catcher","center"]]}
+  {q:"팀플레이를 할 때 나는?",a:[
+    ["맡은 역할을 꾸준히 해내서 팀이 안심하게 만든다.", "first", "catcher"],
+    ["상황을 재빨리 파악하고 빈틈부터 메운다.", "second", "short"],
+    ["결정적인 순간엔 내가 앞장서서 승부를 건다.", "third", "left"],
+    ["모두의 상태를 살피고 역할을 조율한다.", "catcher", "first"]
+  ]},
+  {q:"예상치 못한 문제가 생겼다! 나는?",a:[
+    ["여러 가능성을 빠르게 비교해 가장 좋은 해결책을 고른다.", "short", "second"],
+    ["우선 내가 잘하는 방법으로 돌파구를 만들어 낸다.", "left", "right"],
+    ["가장 바쁜 곳으로 뛰어가 필요한 일을 돕는다.", "center", "short"],
+    ["주저하지 않고 강력한 한 수로 상황을 뒤집는다.", "right", "third"]
+  ]},
+  {q:"내가 가장 듣고 싶은 칭찬은?",a:[
+    ["너는 언제나 믿고 맡길 수 있어.", "first", "catcher"],
+    ["순발력이 정말 좋고 움직임에 센스가 있어.", "second", "center"],
+    ["네가 나서면 분위기가 단번에 바뀌어.", "left", "third"],
+    ["어디에 투입해도 제 몫을 해내네!", "center", "second"]
+  ]},
+  {q:"승부를 앞둔 순간, 나의 모습은?",a:[
+    ["정면 승부를 피하지 않고 자신 있게 나선다.", "third", "right"],
+    ["상대의 움직임을 읽고 가장 좋은 타이밍을 찾는다.", "short", "center"],
+    ["내가 가진 확실한 무기를 믿고 한 방을 준비한다.", "right", "left"],
+    ["팀원들을 살피며 모두가 제 실력을 내게 돕는다.", "catcher", "first"]
+  ]},
+  {q:"내가 가장 자신 있는 능력은?",a:[
+    ["오래 버티며 끝까지 흔들리지 않는 꾸준함.", "first", "catcher"],
+    ["부담이 큰 순간에도 과감하게 실행하는 추진력.", "third", "right"],
+    ["기회를 놓치지 않고 결과로 연결하는 집중력.", "left", "center"],
+    ["멀리 내다보고 강한 한 방을 만들어 내는 힘.", "right", "left"]
+  ]},
+  {q:"친구들과 여행을 간다면 나는?",a:[
+    ["현장에서 가장 빠른 길과 숨은 명소를 찾아낸다.", "second", "short"],
+    ["계획이 바뀌어도 상황에 맞춰 동선을 다시 짠다.", "short", "second"],
+    ["걷고 뛰고 돌아다녀도 지치지 않는 활동 담당!", "center", "first"],
+    ["모두의 취향과 컨디션을 챙겨 일정을 조율한다.", "catcher", "center"]
+  ]},
+  {q:"경쟁 상황에서 나의 전략은?",a:[
+    ["내 페이스를 지키며 마지막까지 안정적으로 간다.", "first", "catcher"],
+    ["상대의 패턴을 분석해 허점을 파고든다.", "short", "second"],
+    ["기회가 오면 공격적으로 몰아쳐 승부를 낸다.", "left", "third"],
+    ["승부처에 아껴 둔 강력한 카드를 꺼낸다.", "right", "third"]
+  ]},
+  {q:"나를 동물에 비유한다면?",a:[
+    ["다람쥐! 재빠르고 영리하게 움직인다.", "second", "short"],
+    ["호랑이! 두려움 없이 정면으로 맞선다.", "third", "left"],
+    ["돌고래! 활동적이고 다재다능하게 어울린다.", "center", "second"],
+    ["늑대! 무리를 살피고 함께 움직이게 한다.", "catcher", "first"]
+  ]},
+  {q:"팀에서 내가 맡고 싶은 역할은?",a:[
+    ["누구나 의지할 수 있는 든든한 중심축.", "first", "catcher"],
+    ["어려운 상황에서 해결책을 찾아내는 브레인.", "short", "center"],
+    ["여기저기 뛰어다니며 빈자리를 메우는 만능 지원군.", "center", "right"],
+    ["결정적인 순간 모두가 기대하는 해결사.", "right", "third"]
+  ]},
+  {q:"마지막으로, 내가 가장 중요하게 생각하는 것은?",a:[
+    ["빠르게 적응하고 재치 있게 기회를 잡는 것.", "second", "short"],
+    ["실패를 겁내지 않고 당당히 도전하는 것.", "third", "left"],
+    ["나만의 장점을 날카롭게 갈고닦는 것.", "left", "right"],
+    ["혼자보다 팀 전체가 좋은 결과를 내는 것.", "catcher", "first"]
+  ]}
 ];
 // ─────────────────────────────────────────────
 let current=0, answers=Array(QUESTIONS.length).fill(null);
