@@ -66,6 +66,45 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
   line-height: 1.2;
   color: #17283D;
 }
+ /* 휴대폰에서 카드 내용이 겹치지 않도록 */
+@media (max-width: 600px) {
+  .share-card {
+    aspect-ratio: auto;
+    height: auto;
+    min-height: 0;
+    justify-content: flex-start;
+  }
+
+  .share-card-main {
+    flex: none;
+    height: auto;
+    min-height: 0;
+    padding: 18px 12px;
+    gap: 12px;
+  }
+
+  .share-card-head,
+  .share-card-foot {
+    flex-shrink: 0;
+  }
+
+  .share-card-name {
+    font-size: clamp(34px, 10vw, 48px);
+  }
+
+  .share-card-art {
+    width: auto;
+    max-width: 90%;
+    height: auto;
+    max-height: 220px;
+    object-fit: contain;
+  }
+
+  .share-card-description {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+}
 </style>
 </head>
 <body>
