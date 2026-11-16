@@ -275,7 +275,9 @@ async function createExportCard(hideArt = false) {
   if (art) {
     Object.assign(art.style, {
       display: "block",
-      width: "auto",
+      // GIF는 로딩 전에도 합성 영역의 너비가 0이 되지 않도록 고정합니다.
+      // PNG는 기존처럼 원본 이미지의 가로세로 비율을 유지합니다.
+      width: hideArt ? "440px" : "auto",
       maxWidth: "440px",
       height: "240px",
       maxHeight: "240px",
@@ -380,8 +382,8 @@ async function saveAnimatedCard(){
   const scale = exported.scale;
   const imageBox = exported.imageBox;
 
-  if (!imageBox) {
-    throw new Error("GIF 이미지 영역을 찾을 수 없어요.");
+  if (!imageBox || imageBox.width <= 0 || imageBox.height <= 0) {
+    throw new Error("GIF 이미지 영역 크기를 계산하지 못했어요.");
   }
 
   const x = imageBox.x;
@@ -391,6 +393,7 @@ async function saveAnimatedCard(){
 
   // 원본 GIF의 부분 프레임을 온전한 이미지로 복원.
   const fw=parsed.lsd.width,fh=parsed.lsd.height;
+  if (!fw || !fh) throw new Error("GIF 원본 이미지 크기를 읽지 못했어요.");
   const stage=document.createElement("canvas");stage.width=fw;stage.height=fh;
   const ctx=stage.getContext("2d",{willReadFrequently:true});
   const patch=document.createElement("canvas"),pc=patch.getContext("2d");
