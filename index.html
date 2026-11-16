@@ -244,40 +244,60 @@ async function shareCardImage(){
  }catch(e){if(e.name!=="AbortError")alert(e.message)}
 }
 
-/* 움직이는 카드 GIF 저장: 원본 GIF의 프레임을 카드에 합성합니다. */
+/* GIF 전용 카드: 화면에 보이는 카드는 변경하지 않고, 저장할 때만 컴팩트한 복제본을 사용합니다. */
 async function saveAnimatedCard(){
  const btn=$("gifSaveButton");
- const original=btn.textContent;
- let workerURL=null;
+ let workerURL=null, clone=null;
  try{
   btn.disabled=true;
   btn.textContent="GIF 준비 중…";
-  if(typeof html2canvas!=="function"||typeof GIF!=="function"){
-   throw new Error("GIF 변환 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
-  }
+  if(typeof html2canvas!=="function" || typeof GIF!=="function")throw new Error("이미지 변환 라이브러리를 불러오지 못했어요.");
   const card=$("shareCard"), art=card.querySelector("img.share-card-art");
-  if(!art || !/\.gif(?:[?#]|$)/i.test(art.getAttribute("src"))){
-   throw new Error("이 결과에는 GIF 이미지가 등록되어 있지 않아요.");
-  }
-  const gifURL=new URL(art.getAttribute("src"),location.href).href;
-  const response=await fetch(gifURL);
-  if(!response.ok)throw new Error("원본 GIF 파일을 읽을 수 없어요. images 폴더와 파일명을 확인해 주세요.");
-  const raw=await response.arrayBuffer();
+  if(!art || !/\.gif(?:[?#]|$)/i.test(art.getAttribute("src")))throw new Error("이 결과에 GIF 이미지가 없어요.");
+  const response=await fetch(new URL(art.getAttribute("src"),location.href));
+  if(!response.ok)throw new Error("GIF 파일을 불러올 수 없어요.");
   const gifuctjs=await import("https://esm.sh/gifuct-js@2.1.2");
-  const parsed=gifuctjs.parseGIF(raw);
+  const parsed=gifuctjs.parseGIF(await response.arrayBuffer());
   const frames=gifuctjs.decompressFrames(parsed,true);
-  if(!frames.length)throw new Error("GIF에 프레임이 없어요.");
+  if(!frames.length)throw new Error("GIF 프레임이 없어요.");
 
-  // 원본 GIF의 투명도와 프레임 위치, disposal 처리를 반영해 전체 프레임을 재구성합니다.
+  // GIF 저장 전용 복제본. 화면 카드의 종횡비나 flex 여백에 영향을 받지 않도록 고정 크기로 렌더링.
+  clone=card.cloneNode(true);
+  clone.removeAttribute("id");
+  Object.assign(clone.style,{
+   position:"fixed",left:"-10000px",top:"0",width:"600px",height:"auto",
+   aspectRatio:"auto",margin:"0",padding:"14px",gap:"8px",
+   justifyContent:"flex-start",boxSizing:"border-box"
+  });
+  const main=clone.querySelector(".share-card-main");
+  Object.assign(main.style,{
+   flex:"none",minHeight:"0",height:"auto",padding:"18px 14px",gap:"10px",
+   justifyContent:"flex-start"
+  });
+  const cloneArt=clone.querySelector("img.share-card-art");
+  Object.assign(cloneArt.style,{
+   display:"block",width:"440px",maxWidth:"100%",height:"240px",
+   maxHeight:"none",margin:"4px auto",objectFit:"contain",opacity:"0"
+  });
+  document.body.appendChild(clone);
+  await document.fonts?.ready;
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  const cardBox=clone.getBoundingClientRect();
+  const imageBox=cloneArt.getBoundingClientRect();
+  const scale=1.5;
+  const base=await html2canvas(clone,{scale,backgroundColor:"#17283D",useCORS:true,logging:false});
+  const x=(imageBox.left-cardBox.left)*scale;
+  const y=(imageBox.top-cardBox.top)*scale;
+  const boxW=imageBox.width*scale,boxH=imageBox.height*scale;
+
+  // 원본 GIF의 부분 프레임을 온전한 이미지로 복원.
   const fw=parsed.lsd.width,fh=parsed.lsd.height;
   const stage=document.createElement("canvas");stage.width=fw;stage.height=fh;
   const ctx=stage.getContext("2d",{willReadFrequently:true});
   const patch=document.createElement("canvas"),pc=patch.getContext("2d");
   const selected=[];
-  let prev=null, restore=null;
-  const limit=24; // 모바일 메모리 보호: 최대 24프레임
-  const stride=Math.max(1,Math.ceil(frames.length/limit));
-  let pendingDelay=0;
+  let prev=null,restore=null,pendingDelay=0;
+  const stride=Math.max(1,Math.ceil(frames.length/24));
   for(let i=0;i<frames.length;i++){
    if(prev){
     if(prev.disposalType===2)ctx.clearRect(prev.dims.left,prev.dims.top,prev.dims.width,prev.dims.height);
@@ -288,58 +308,45 @@ async function saveAnimatedCard(){
    patch.width=f.dims.width;patch.height=f.dims.height;
    pc.putImageData(new ImageData(f.patch,f.dims.width,f.dims.height),0,0);
    ctx.drawImage(patch,f.dims.left,f.dims.top);
-   pendingDelay+=Math.max(20,(f.delay||100));
+   pendingDelay+=Math.max(20,f.delay||100);
    if(i%stride===0 || i===frames.length-1){
-    selected.push({data:stage.toDataURL("image/png"),delay:pendingDelay});
-    pendingDelay=0;
+    const frame=document.createElement("canvas");frame.width=fw;frame.height=fh;
+    frame.getContext("2d").drawImage(stage,0,0);
+    selected.push({frame,delay:pendingDelay});pendingDelay=0;
    }
    prev=f;
   }
-  // gif.js 워커는 외부 CDN에서 직접 실행할 수 없어 Blob URL로 만듭니다.
   const workerResponse=await fetch("https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js");
-  if(!workerResponse.ok)throw new Error("GIF 저장용 워커를 불러오지 못했어요.");
+  if(!workerResponse.ok)throw new Error("GIF 인코더를 불러오지 못했어요.");
   workerURL=URL.createObjectURL(new Blob([await workerResponse.text()],{type:"text/javascript"}));
-  const encoder=new GIF({workers:2,quality:12,workerScript:workerURL,repeat:0});
-  const output=await new Promise(async(resolve,reject)=>{
+  const encoder=new GIF({workers:2,quality:12,workerScript:workerURL,repeat:0,width:base.width,height:base.height});
+  const result=await new Promise((resolve,reject)=>{
    encoder.on("finished",resolve);
    encoder.on("abort",()=>reject(new Error("GIF 생성이 중단되었어요.")));
    try{
-    for(let i=0;i<selected.length;i++){
+    selected.forEach(({frame,delay},i)=>{
      btn.textContent=`GIF 생성 중 ${i+1}/${selected.length}`;
-     // 프레임마다 원본 비율을 보존해 이미지 영역에 합성합니다.
-     // html2canvas가 GIF 프레임을 찌그러뜨리지 않도록 카드 배경과 이미지를 분리해 그립니다.
-     const frameImg=new Image();
-     frameImg.src=selected[i].data;
-     await frameImg.decode();
-     const imageBox=art.getBoundingClientRect();
-     const cardBox=card.getBoundingClientRect();
-     const scale=1.5;
-     const previousVisibility=art.style.visibility;
-     art.style.visibility="hidden";
-     let canvas;
-     try{
-      canvas=await html2canvas(card,{scale,backgroundColor:"#17283D",useCORS:true,logging:false});
-     }finally{art.style.visibility=previousVisibility;}
-     const draw=canvas.getContext("2d");
-     const boxW=imageBox.width*scale,boxH=imageBox.height*scale;
-     const ratio=Math.min(boxW/frameImg.naturalWidth,boxH/frameImg.naturalHeight);
-     const drawW=frameImg.naturalWidth*ratio,drawH=frameImg.naturalHeight*ratio;
-     const dx=(imageBox.left-cardBox.left)*scale+(boxW-drawW)/2;
-     const dy=(imageBox.top-cardBox.top)*scale+(boxH-drawH)/2;
-     draw.drawImage(frameImg,dx,dy,drawW,drawH);
-     encoder.addFrame(canvas,{copy:true,delay:selected[i].delay});
-    }
+     const canvas=document.createElement("canvas");canvas.width=base.width;canvas.height=base.height;
+     const c=canvas.getContext("2d");
+     c.drawImage(base,0,0);
+     const ratio=Math.min(boxW/frame.width,boxH/frame.height);
+     const w=frame.width*ratio,h=frame.height*ratio;
+     c.drawImage(frame,x+(boxW-w)/2,y+(boxH-h)/2,w,h);
+     encoder.addFrame(canvas,{copy:true,delay});
+    });
     encoder.render();
    }catch(e){reject(e)}
   });
-  const url=URL.createObjectURL(output),a=document.createElement("a");
-  a.href=url;a.download="beyond-the-ninth-animated.gif";document.body.appendChild(a);a.click();a.remove();
+  const url=URL.createObjectURL(result),link=document.createElement("a");
+  link.href=url;link.download="beyond-the-ninth-animated.gif";
+  document.body.appendChild(link);link.click();link.remove();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
  }catch(e){alert("GIF 저장에 실패했어요: "+(e.message||e));}
  finally{
-  // 원본 GIF를 다시 표시하도록 결과 화면을 새로 렌더링합니다.
-  showResult();
+  if(clone)clone.remove();
   if(workerURL)URL.revokeObjectURL(workerURL);
+  btn.disabled=false;
+  btn.textContent="🎞️ 움직이는 GIF 저장";
  }
 }
 
