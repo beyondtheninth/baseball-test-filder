@@ -430,7 +430,13 @@ async function saveAnimatedCard(){
      c.drawImage(base,0,0);
      const ratio=Math.min(boxW/frame.width,boxH/frame.height);
      const w=frame.width*ratio,h=frame.height*ratio;
-     c.drawImage(frame,x+(boxW-w)/2,y+(boxH-h)/2,w,h);
+     c.drawImage(
+  frame,
+  Math.round(x+(boxW-w)/2),
+  Math.round(y+(boxH-h)/2),
+  Math.round(w),
+  Math.round(h)
+);
      encoder.addFrame(canvas,{copy:true,delay});
     });
     encoder.render();
