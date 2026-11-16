@@ -227,14 +227,115 @@ function showResult(){
 
  window.lastResult=`야수 8포지션 성향 테스트 결과: ${names}${isTie?" (공동 1위)":""}`;
 }
-async function makeCardBlob(){
- if(typeof html2canvas!=="function")throw new Error("이미지 생성 라이브러리를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.");
- const card=$("shareCard");
- await Promise.all([...card.querySelectorAll("img")].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=resolve;img.onerror=resolve})));
- const canvas=await html2canvas(card,{scale:3,backgroundColor:"#f3ede2",useCORS:true});
- return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("이미지 변환에 실패했어요.")),"image/png"));
+ 
+/* PNG와 GIF가 함께 사용하는 저장 전용 카드 */
+async function createExportCard(hideArt = false) {
+  const original = $("shareCard");
+  const clone = original.cloneNode(true);
+
+  clone.removeAttribute("id");
+
+  Object.assign(clone.style, {
+    position: "fixed",
+    left: "-10000px",
+    top: "0",
+    width: "600px",
+    height: "auto",
+    aspectRatio: "auto",
+    margin: "0",
+    padding: "14px",
+    gap: "8px",
+    justifyContent: "flex-start",
+    boxSizing: "border-box",
+    boxShadow: "none"
+  });
+
+  const main = clone.querySelector(".share-card-main");
+  Object.assign(main.style, {
+    flex: "none",
+    minHeight: "0",
+    height: "auto",
+    padding: "18px 14px",
+    gap: "10px",
+    justifyContent: "flex-start"
+  });
+
+  const art = clone.querySelector(".share-card-art");
+
+  if (art) {
+    Object.assign(art.style, {
+      display: "block",
+      width: "440px",
+      maxWidth: "100%",
+      height: "240px",
+      maxHeight: "none",
+      margin: "4px auto",
+      objectFit: "contain",
+      opacity: hideArt ? "0" : "1"
+    });
+  }
+
+  document.body.appendChild(clone);
+
+  try {
+    if (document.fonts) await document.fonts.ready;
+
+    if (art && !hideArt) {
+      await new Promise(resolve => {
+        if (art.complete) return resolve();
+        art.onload = resolve;
+        art.onerror = resolve;
+      });
+    }
+
+    await new Promise(resolve =>
+      requestAnimationFrame(() =>
+        requestAnimationFrame(resolve)
+      )
+    );
+
+    const cardBox = clone.getBoundingClientRect();
+    const imageBox = art ? art.getBoundingClientRect() : null;
+    const scale = 1.5;
+
+    const canvas = await html2canvas(clone, {
+      scale,
+      backgroundColor: "#17283D",
+      useCORS: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: 0
+    });
+
+    return {
+      canvas,
+      scale,
+      imageBox: imageBox ? {
+        x: (imageBox.left - cardBox.left) * scale,
+        y: (imageBox.top - cardBox.top) * scale,
+        width: imageBox.width * scale,
+        height: imageBox.height * scale
+      } : null
+    };
+  } finally {
+    clone.remove();
+  }
 }
-async function saveCard(){
+async function makeCardBlob() {
+  if (typeof html2canvas !== "function") {
+    throw new Error("이미지 변환 라이브러리를 불러오지 못했어요.");
+  }
+
+  const { canvas } = await createExportCard(false);
+
+  return await new Promise((resolve, reject) => {
+    canvas.toBlob(blob => {
+      if (blob) resolve(blob);
+      else reject(new Error("PNG 변환에 실패했어요."));
+    }, "image/png");
+  });
+}
+ async function saveCard(){
  try{const blob=await makeCardBlob(),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="beyond-the-ninth-position.png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)}catch(e){alert(e.message)}
 }
 async function shareCardImage(){
@@ -261,34 +362,21 @@ async function saveAnimatedCard(){
   const frames=gifuctjs.decompressFrames(parsed,true);
   if(!frames.length)throw new Error("GIF 프레임이 없어요.");
 
-  // GIF 저장 전용 복제본. 화면 카드의 종횡비나 flex 여백에 영향을 받지 않도록 고정 크기로 렌더링.
-  clone=card.cloneNode(true);
-  clone.removeAttribute("id");
-  Object.assign(clone.style,{
-   position:"fixed",left:"-10000px",top:"0",width:"600px",height:"auto",
-   aspectRatio:"auto",margin:"0",padding:"14px",gap:"8px",
-   justifyContent:"flex-start",boxSizing:"border-box"
-  });
-  const main=clone.querySelector(".share-card-main");
-  Object.assign(main.style,{
-   flex:"none",minHeight:"0",height:"auto",padding:"18px 14px",gap:"10px",
-   justifyContent:"flex-start"
-  });
-  const cloneArt=clone.querySelector("img.share-card-art");
-  Object.assign(cloneArt.style,{
-   display:"block",width:"440px",maxWidth:"100%",height:"240px",
-   maxHeight:"none",margin:"4px auto",objectFit:"contain",opacity:"0"
-  });
-  document.body.appendChild(clone);
-  await document.fonts?.ready;
-  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  const cardBox=clone.getBoundingClientRect();
-  const imageBox=cloneArt.getBoundingClientRect();
-  const scale=1.5;
-  const base=await html2canvas(clone,{scale,backgroundColor:"#17283D",useCORS:true,logging:false});
-  const x=(imageBox.left-cardBox.left)*scale;
-  const y=(imageBox.top-cardBox.top)*scale;
-  const boxW=imageBox.width*scale,boxH=imageBox.height*scale;
+  // PNG와 동일한 카드 배경으로 GIF 생성
+  const exported = await createExportCard(true);
+
+  const base = exported.canvas;
+  const scale = exported.scale;
+  const imageBox = exported.imageBox;
+
+  if (!imageBox) {
+    throw new Error("GIF 이미지 영역을 찾을 수 없어요.");
+  }
+
+  const x = imageBox.x;
+  const y = imageBox.y;
+  const boxW = imageBox.width;
+  const boxH = imageBox.height;
 
   // 원본 GIF의 부분 프레임을 온전한 이미지로 복원.
   const fw=parsed.lsd.width,fh=parsed.lsd.height;
@@ -297,7 +385,7 @@ async function saveAnimatedCard(){
   const patch=document.createElement("canvas"),pc=patch.getContext("2d");
   const selected=[];
   let prev=null,restore=null,pendingDelay=0;
-  const stride=Math.max(1,Math.ceil(frames.length/24));
+  const stride=Math.max(1,Math.ceil(frames.length/90));
   for(let i=0;i<frames.length;i++){
    if(prev){
     if(prev.disposalType===2)ctx.clearRect(prev.dims.left,prev.dims.top,prev.dims.width,prev.dims.height);
