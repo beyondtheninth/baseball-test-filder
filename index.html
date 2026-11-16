@@ -26,7 +26,7 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
 .share-card{width:100%;aspect-ratio:4/5;background:#f3ede2;color:#191919;border:2px solid #191919;padding:24px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;margin:20px 0;font-family:"Pretendard",sans-serif}
 .share-card-head,.share-card-foot{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:11px;font-weight:900;letter-spacing:.08em}
 .share-card-head{border-bottom:2px solid #191919;padding-bottom:12px}.share-card-main{text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px 0}
-.share-card-eyebrow{font-size:11px;letter-spacing:.2em;font-weight:800;color:#a52b35}.share-card-name{font-size:clamp(35px,8vw,62px);font-weight:1000;line-height:1.15}.share-card-title{font-size:clamp(18px,4vw,26px);font-weight:900;color:#a52b35}.share-card-art{width:70%;height:160px;object-fit:contain}.share-card-emoji{font-size:76px;line-height:1.2}.share-card-tags{font-size:13px;font-weight:800}.share-card-description{font-size:13px;line-height:1.6;max-width:380px}.share-card-foot{border-top:2px solid #191919;padding-top:12px}
+.share-card-eyebrow{font-size:11px;letter-spacing:.2em;font-weight:800;color:#246b59}.share-card-name{font-size:clamp(35px,8vw,62px);font-weight:1000;line-height:1.15}.share-card-title{font-size:clamp(18px,4vw,26px);font-weight:900;color:#246b59}.share-card-art{width:70%;height:160px;object-fit:contain}.share-card-emoji{font-size:76px;line-height:1.2}.share-card-tags{font-size:13px;font-weight:800}.share-card-description{font-size:13px;line-height:1.6;max-width:380px}.share-card-foot{border-top:2px solid #191919;padding-top:12px}
 @media(max-width:420px){.share-card{padding:15px}.share-card-art{height:125px}.share-card-main{gap:8px}.share-card-description{font-size:11px}}
 
 /* BT9 트레이딩 카드 디자인 */
@@ -34,9 +34,9 @@ footer{text-align:center;color:#98a1aa;font-size:11px;margin-top:22px}
 .share-card-head,.share-card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#EBD7A8;font-size:10px;font-weight:900;letter-spacing:.08em}
 .share-card-head{padding:5px 6px 12px;border-bottom:1px solid #D9B778}
 .share-card-main{flex:1;min-height:0;padding:15px 12px;background:#F4EBDD;border:2px solid #D9B778;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
-.share-card-eyebrow{font-size:10px;font-weight:900;letter-spacing:.13em;color:#A52B35}
+.share-card-eyebrow{font-size:10px;font-weight:900;letter-spacing:.13em;color:#246B59}
 .share-card-name{font-size:clamp(28px,7vw,52px);font-weight:900;line-height:1.1}
-.share-card-title{font-size:clamp(15px,4vw,23px);font-weight:900;color:#A52B35}
+.share-card-title{font-size:clamp(15px,4vw,23px);font-weight:900;color:#246B59}
 .share-card-art{display:block;width:55%;height:110px;object-fit:contain;margin:5px auto}
 .share-card-emoji{font-size:56px}
 .share-card-tags{padding:7px 12px;border-radius:5px;background:#17283D;color:#fff;font-size:12px;font-weight:800}
@@ -121,20 +121,31 @@ footer{color:#789184}
 footer .source-credit{display:block;margin-top:12px;font-size:12px;line-height:1.7}
 footer .source-credit a{color:var(--accent);font-weight:800;text-decoration:underline;text-underline-offset:3px}
 footer .source-credit a:hover{opacity:.75}
+
+/* 인앱 브라우저 이미지 저장 안내 */
+.browser-notice{margin:18px 0 4px;padding:15px 16px;border:1px solid #bfd1c4;background:#eaf2eb;border-radius:12px;color:#244e40;line-height:1.65}
+.browser-notice strong{display:block;font-size:14px;margin-bottom:5px}
+.browser-notice p{margin:0 0 7px;font-size:13px;color:inherit}
+.browser-notice .notice-steps{font-size:12px;font-weight:800;line-height:1.65}
 </style>
 </head>
 <body>
-<!-- 음악 파일은 GitHub의 images/bgm_.mp3 에 업로드하세요. -->
-<audio id="siteBgm" src="images/bgm_.mp3" preload="none" loop></audio>
+<!-- 음악 파일은 GitHub의 images/bgm.mp3 에 업로드하세요. -->
+<audio id="siteBgm" src="images/bgm.mp3" preload="none" loop></audio>
 <button type="button" id="bgmToggle" class="bgm-toggle hidden" onclick="toggleBgm()" aria-label="배경음악 켜기" aria-pressed="false">♫ BGM OFF</button>
 <div class="wrap">
 <section class="hero" id="intro">
 <div class="kicker">BEYOND THE NINTH · PLAYER TYPE TEST</div>
 <div class="hero-visual">
-    <img src="images/header_.png" alt="야구 메인 비주얼">
+    <img src="images/header.jpg" alt="야구 메인 비주얼">
 </div>
 <h1>나는 어떤 야수 포지션일까?</h1>
 <p>성향을 따라가다 보면 나와 닮은 포지션이 나타납니다.<br>총 10문항, 각 문항에서 가장 나다운 답 하나를 골라주세요!</p>
+<div class="browser-notice" role="note" aria-label="이미지 저장 안내">
+<strong>ⓘ 이미지 저장 전 꼭 확인해 주세요!</strong>
+<p>X(트위터), 카카오톡 등 앱 내 브라우저에서는 결과 이미지 저장이 제한될 수 있습니다. 원활한 이미지 저장을 위해 외부 브라우저 이용을 권장합니다.</p>
+<div class="notice-steps">우측 상단 메뉴(⋯) → 외부 브라우저로 열기 → 이미지 저장</div>
+</div>
 <div class="actions"><button class="btn primary" onclick="start()">야구단 입단하기</button></div>
 </section>
 <section class="panel hidden" id="quiz">
